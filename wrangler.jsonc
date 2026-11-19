@@ -2,6 +2,18 @@
   "name": "sidequest",
   "main": "worker.mjs",
   "compatibility_date": "2026-11-19",
-  "assets": {"directory": "./dist", "binding": "ASSETS", "run_worker_first": ["/api/*"]},
-  "observability": {"enabled": false}
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  },
+  "observability": {
+    "enabled": false
+  },
+  "vars": {
+    "SUPABASE_URL": "https://sufrojtwepekkzyhrrec.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_iQlLQ0uh3sBa5-Rwr7PgLg_ZVlKMGve"
+  }
 }
