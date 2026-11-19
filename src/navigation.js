@@ -1,0 +1,12 @@
+(()=>{const rawShow=showModal,rawClose=closeModal,rawGo=go;const entries=new Map();let pos=0,serial=0,closing=false,queue=[];
+const root=()=>document.getElementById('modal');
+const snap=()=>entries.set(pos,{tab,query,taskSearch,showTaskDone,filmFilter,backlogFilter,backlogSearch,nodes:[...root().childNodes],scroll:window.scrollY});
+const state=()=>({...history.state,sidequestPage:pos});
+function push(){snap();pos=++serial;history.pushState(state(),'')}
+history.replaceState(state(),'');snap();
+go=k=>{if(closing){queue.push(()=>go(k));return}if(k===tab&&!root().childNodes.length)return;push();rawClose();rawGo(k);snap()};
+showModal=html=>{if(closing){queue.push(()=>showModal(html));return}const title=html.match(/<h2[^>]*>(.*?)<\/h2>/)?.[1],current=root().querySelector('h2')?.innerHTML;const entity=html.match(/(?:saveTaskEdit|saveIdea|saveMovie)\('([^']+)'/)?.[1];const oldEntity=root().getAttribute('data-entity');if(!current||current!==title||(entity&&oldEntity!==entity))push();rawShow(html);root().setAttribute('data-entity',entity||'');const sheet=root().querySelector('.sheet');sheet?.setAttribute('role','dialog');sheet?.setAttribute('aria-label',title||'Details');sheet?.setAttribute('aria-modal','true');for(const label of root().querySelectorAll('label')){const next=label.nextElementSibling;if(next?.id)label.htmlFor=next.id}snap()};
+closeModal=()=>{if(!root().childNodes.length||closing)return;if(pos){closing=true;history.back()}else rawClose()};
+window.addEventListener('popstate',e=>{const target=e.state?.sidequestPage;if(!entries.has(target)){closing=false;return}snap();pos=target;const s=entries.get(target);tab=s.tab;query=s.query;taskSearch=s.taskSearch;showTaskDone=s.showTaskDone;filmFilter=s.filmFilter;backlogFilter=s.backlogFilter;backlogSearch=s.backlogSearch;render();root().replaceChildren(...s.nodes);for(const block of root().querySelectorAll('[data-project-tasks]'))block.innerHTML=taskList(data.tasks.filter(t=>t.projectId===block.dataset.projectTasks));closing=false;const title=root().querySelector('h2')?.textContent;if(title==='Have a few minutes?')momentView();else if(title==='Inbox')reviewInbox();else if(title==='Recovery')recovery();else if(title==='Ready to revisit')reviewDue();else if(title==='Search everything')searchResults(document.getElementById('globalQuery').value);window.scrollTo(0,s.scroll);const next=queue;queue=[];next.forEach(f=>f())});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&root().childNodes.length)closeModal()});
+})();

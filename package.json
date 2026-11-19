@@ -1,0 +1,17 @@
+{
+  "name": "sidequest-independent",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node test.mjs",
+    "dev": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.92.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

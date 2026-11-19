@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {normalise,orderedTasks,placeTask,validBoard,clone,mergeBoard} from '../src/model.js';
+const b=normalise({tasks:[{id:'a',title:'A',createdAt:1},{id:'b',title:'B',createdAt:2},{id:'c',title:'C',createdAt:3,done:true}],ideas:[],movies:[],settings:{}});
+const ids=d=>orderedTasks(d.tasks,d.settings.taskOrder).map(x=>x.id);
+const base=clone(b);
+assert(placeTask(b,'c','a',false));assert.deepEqual(ids(b),['c','a','b']);assert.deepEqual(orderedTasks(b.tasks,'added').map(x=>x.id),['a','b','c']);
+b.tasks.push({id:'d',title:'Inserted',createdAt:4});assert(placeTask(b,'d','a',true));assert.deepEqual(ids(b),['c','a','d','b']);assert.equal(b.tasks.find(x=>x.id==='d').createdAt,4);
+assert(validBoard(b));assert.deepEqual(ids(JSON.parse(JSON.stringify(b))),ids(b));
+const remote=clone(base);remote.tasks[0].title='Remote rename';const merged=mergeBoard(base,b,remote);assert.equal(merged.conflicts.length,0);assert.deepEqual(ids(merged.data),ids(b));assert.equal(merged.data.tasks.find(x=>x.id==='a').title,'Remote rename');
+assert(!placeTask(b,'a','missing'));assert(!placeTask(b,'a','a'));assert.deepEqual(ids(b),['c','a','d','b']);
+b.settings.taskOrder='added';assert(placeTask(b,'b','a',false));assert.deepEqual(ids(b),['b','a','c','d']);
+b.tasks[0].position='bad';assert(!validBoard(b));
+console.log('PASS: insertion, moves, original timestamps, chronological view, backup and merge persistence, missing anchors, validation');

@@ -1,0 +1,4 @@
+const CACHE='sidequest-shell-1';
+self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE);for(const p of ['/','/app.js']){try{const r=await fetch(p,{cache:'reload'});if(r.ok&&!r.redirected)await c.put(p,r)}catch{}}await self.skipWaiting()})()));
+self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
+self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(u.origin!==location.origin||e.request.method!=='GET'||!['/','/app.js'].includes(u.pathname)||u.search)return;e.respondWith((async()=>{try{const r=await fetch(e.request);if(r.ok&&!r.redirected){const c=await caches.open(CACHE);await c.put(u.pathname,r.clone())}return r}catch{return await caches.match(u.pathname)||new Response('Open Sidequest online once before using it offline.',{status:503})}})())});

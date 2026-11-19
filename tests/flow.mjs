@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {inToday,needsTodayReview,reviewTodayTask,normalise,mergeBoard,validBoard} from '../src/model.js';
+const date='2026-11-08';
+let task={id:'a',title:'Existing task',today:true,todaySelectedOn:'2026-11-07',done:false,deadline:'2026-11-09'};
+assert(inToday(task,date));assert(needsTodayReview(task,date));reviewTodayTask(task,'keep',date);assert(!needsTodayReview(task,date));assert(needsTodayReview(task,'2026-11-09'));
+reviewTodayTask(task,'later',date);assert(!inToday(task,date));assert.equal(task.deadline,'2026-11-09');
+task={id:'b',title:'Planned task',planned:'2026-11-07',done:false};assert(inToday(task,date));assert(needsTodayReview(task,date));reviewTodayTask(task,'done',date);assert.equal(task.completedOn,date);assert(!needsTodayReview(task,date));
+const future={id:'c',title:'Future',planned:'2026-11-09'};assert(!inToday(future,date));
+const base=normalise({tasks:[{id:'b',title:'Task',planned:'2026-11-07'}],settings:{}}),local=structuredClone(base),remote=structuredClone(base);reviewTodayTask(local.tasks[0],'later',date);remote.tasks[0].title='Other device rename';const merged=mergeBoard(base,local,remote);assert.equal(merged.conflicts.length,0);assert.equal(merged.data.tasks[0].planned,'');assert.equal(merged.data.tasks[0].title,'Other device rename');assert(validBoard(merged.data));merged.data.tasks[0].completedOn='bad';assert(!validBoard(merged.data));
+console.log('PASS: carry-forward, keep/later/done, future plans, deadline retention and concurrent merge');
+const {default:vm}=await import('node:vm');const {default:fs}=await import('node:fs');
+const c={save(){},render(){},syncStatus(){},window:{addEventListener(){}},setInterval(){},day:()=>date,preview:false,deviceSaveState:'saved',blocked:false,savePaused:false,pending:null,syncBusy:false,syncLabel:'Synced',navigator:{onLine:true}};vm.createContext(c);vm.runInContext(fs.readFileSync('flow.js','utf8'),c);const status=()=>vm.runInContext('saveStatusText()',c);assert.equal(status(),'Saved to cloud');c.pending={};assert.equal(status(),'Saving…');c.navigator.onLine=false;assert.equal(status(),'Saved on device · offline');c.deviceSaveState='saving';assert.equal(status(),'Offline · not yet saved on device');c.deviceSaveState='failed';assert.equal(status(),'Device backup unavailable');c.deviceSaveState='saved';c.blocked=true;assert.equal(status(),'Review conflicting edits');console.log('PASS: truthful cloud, pending, offline, cache failure and conflict indicators');
