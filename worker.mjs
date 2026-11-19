@@ -6,7 +6,7 @@ async function boundedJson(req,limit){if(Number(req.headers.get('Content-Length'
 function setSession(response,session){response.headers.append('Set-Cookie',cookie('__Host-sq-access',session.access_token,Math.min(session.expires_in||3600,86400)));response.headers.append('Set-Cookie',cookie('__Host-sq-refresh',session.refresh_token,60*60*24*30));return response}
 function clearSession(response){for(const name of ['__Host-sq-access','__Host-sq-refresh'])response.headers.append('Set-Cookie',cookie(name,'',0));return response}
 export function createWorker(fetcher=fetch){
- const request=(env,path,{method='GET',body,token}={})=>fetcher(env.SUPABASE_URL+path,{method,headers:{apikey:env.SUPABASE_PUBLISHABLE_KEY,'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:body===undefined?undefined:JSON.stringify(body),redirect:'error'});
+ const request=async(env,path,{method='GET',body,token}={})=>{const response=await fetcher(env.SUPABASE_URL+path,{method,headers:{apikey:env.SUPABASE_PUBLISHABLE_KEY,'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:body===undefined?undefined:JSON.stringify(body),redirect:'manual'});if(response.status>=300&&response.status<400)throw Error('Unexpected upstream redirect');return response};
  async function authenticate(req,env){
   const c=cookies(req);let token=c['__Host-sq-access'],session;
   let response=token?await request(env,'/auth/v1/user',{token}):null;
@@ -30,6 +30,7 @@ export function createWorker(fetcher=fetch){
     const b=await boundedJson(req,8192);
     if(typeof b.email!=='string'||b.email.length>320||typeof b.password!=='string'||b.password.length>4096)return json({error:'Enter your email and password.'},400);
     const r=await request(env,'/auth/v1/token?grant_type=password',{method:'POST',body:{email:b.email,password:b.password}});
+    if(r.status>=500)throw Error('Authentication unavailable');
     if(!r.ok)return json({error:r.status===429?'Too many attempts. Try again shortly.':'Could not sign in. Check your email and password.'},r.status===429?429:401);
     const session=await r.json();
     const allowed=await request(env,'/rest/v1/sidequest_members?select=user_id',{token:session.access_token});
@@ -58,7 +59,7 @@ export function createWorker(fetcher=fetch){
    if(!r.ok)return finish(json({error:'Could not save board'},r.status===403?403:503));
    const result=await r.json();if(result.conflict)return finish(json({error:'Conflict'},409));
    return finish(json({revision:result.revision}));
-  }catch(e){return json({error:e.status?e.message:'Connection unavailable. Your unsynced edits remain on this device.'},e.status||503)}
+  }catch(e){return json({error:e.status?e.message:(path==='/api/login'?'Sign-in service unavailable. Please try again shortly.':'Connection unavailable. Your unsynced edits remain on this device.')},e.status||503)}
  }};
 }
 export default createWorker();
