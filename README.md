@@ -49,6 +49,10 @@ For local development, use a separate development Supabase project and an ignore
 
 Alternatively, connect the private GitHub repository directly to Cloudflare Workers Builds. Set build command `npm run build` and deploy command `npx wrangler deploy`. Commit the npm-generated package-lock.json. No GitHub token or Supabase secret belongs in client JavaScript.
 
+## Connect movie lookup
+
+Create a fresh TMDB API Read Access Token, then add it to the existing Sidequest Worker as the encrypted secret `TMDB_READ_TOKEN` under **Settings → Variables and Secrets**, or use `npx wrangler secret put TMDB_READ_TOKEN`. Signed-in Sidequest members can then search from Movies on any device. Manual entries work before the secret is configured.
+
 ## Move the live board safely
 
 1. Finish edits on the old app and wait for **Saved to cloud** on each device.

@@ -1,6 +1,7 @@
 import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
-const context={paintSaveStatus(){},console,Response,URL,Intl,Date,crypto:globalThis.crypto,setTimeout(){},setInterval(){return 1},clearInterval(){},navigator:{},localStorage:{getItem(){return 'jay'},setItem(){}},document:{getElementById(){return {innerHTML:''}}}};vm.createContext(context);
-vm.runInContext(fs.readFileSync('model.js','utf8').replaceAll('export ','')+'\n'+fs.readFileSync('client.js','utf8')+'\n'+fs.readFileSync('additions.js','utf8'),context);
+import {validSketchObjects} from '../src/sketch-model.js';
+const context={validSketchObjects,paintSaveStatus(){},console,Response,URL,Intl,Date,crypto:globalThis.crypto,setTimeout(){},setInterval(){return 1},clearInterval(){},navigator:{},localStorage:{getItem(){return 'jay'},setItem(){}},document:{getElementById(){return {innerHTML:''}}}};vm.createContext(context);
+vm.runInContext(fs.readFileSync('model.js','utf8').replace(/^import .*;$/gm,'').replace(/^export /gm,'')+'\n'+fs.readFileSync('client.js','utf8')+'\n'+fs.readFileSync('additions.js','utf8'),context);
 const result=await vm.runInContext(`(async()=>{
  render=()=>{};syncStatus=label=>{syncLabel=label};showToast=()=>{};let savedCache;cached=async(op,value)=>op==='get'?savedCache:(savedCache=clone(value));
  data=normalise({tasks:[{id:'one',title:'Initial',done:false}],ideas:[],movies:[],settings:{}});baseBoard=clone(data);lastSaved=clone(data);owner='jay';ready=true;revision=1;data.tasks[0].done=true;pending=clone(data);

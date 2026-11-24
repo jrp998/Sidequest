@@ -1,4 +1,5 @@
 import {validBoard} from './src/model.js';
+import {tmdbResponse} from './tmdb.mjs';
 const json=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const cookie=(name,value,age)=>`${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${age}`;
 const cookies=req=>Object.fromEntries((req.headers.get('Cookie')||'').split(';').filter(x=>x.includes('=')).map(x=>{const i=x.indexOf('=');return [x.slice(0,i).trim(),decodeURIComponent(x.slice(i+1))]}));
@@ -42,6 +43,14 @@ export function createWorker(fetcher=fetch){
     const auth=await authenticate(req,env);
     if(auth){const r=await request(env,'/auth/v1/logout?scope=local',{method:'POST',token:auth.token});if(!r.ok&&r.status!==401)throw Error('Sign out unavailable')}
     return clearSession(json({ok:true}));
+   }
+   if(path.startsWith('/api/tmdb/')&&req.method==='GET'){
+    const auth=await authenticate(req,env);if(!auth)return clearSession(json({error:'Sign in again to look up titles.'},401));
+    const finish=r=>auth.session?setSession(r,auth.session):r;
+    const allowed=await request(env,'/rest/v1/sidequest_members?select=user_id',{token:auth.token});
+    if(!allowed.ok)throw Error('Account check unavailable');
+    if(!(await allowed.json()).length)return finish(json({error:'This account has not been enabled for Sidequest.'},403));
+    return finish(await tmdbResponse(url,env.TMDB_READ_TOKEN,fetcher,json));
    }
    if(path!=='/api/state'||!['GET','PUT'].includes(req.method))return json({error:'Not found'},404);
    const auth=await authenticate(req,env);if(!auth)return clearSession(json({error:'Sign in'},401));

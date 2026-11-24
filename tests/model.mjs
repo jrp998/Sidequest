@@ -12,3 +12,14 @@ for(const patch of [{deadline:'2026-02-31'},{id:"x');alert(1);//"},{images:['dat
 const recovery=clone(b);recovery.trash.push({id:'trash1',title:'Task',collection:'tasks',record:clone(b.tasks[0])});assert(validBoard(recovery));recovery.trash[0].record.id="bad'";assert(!validBoard(recovery));
 const roundtrip=JSON.parse(JSON.stringify({app:'sidequest',data:b}));assert(validBoard(roundtrip.data));assert.deepEqual(roundtrip.data,b);
 console.log('PASS: independent and same-record merges, conflicts, deletion conflicts, time/context filtering, revisit triggers, hostile imports, nested recovery validation and backup roundtrip');
+
+const sketchBoard = normalise({tasks:[], ideas:[], movies:[], settings:{}});
+const sketchLocal = clone(sketchBoard);
+const sketchRemote = clone(sketchBoard);
+sketchLocal.sketches.push({id:'local-sketch', title:'Local sketch', objects:[{type:'pen', color:'#243746', points:[[0,0],[15,25]]}]});
+sketchRemote.sketches.push({id:'remote-sketch', title:'Remote sketch', objects:[]});
+assert(validBoard(sketchLocal));
+assert.equal(mergeBoard(sketchBoard, sketchLocal, sketchRemote).data.sketches.length, 2);
+sketchLocal.sketches[0].objects[0].points[0][0] = Infinity;
+assert(!validBoard(sketchLocal));
+console.log('PASS: sketch validation and multi-device board merge');
